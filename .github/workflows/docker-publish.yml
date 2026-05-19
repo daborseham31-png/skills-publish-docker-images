@@ -4,19 +4,24 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
 
-permissions:
-  contents: read
-  packages: write
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  docker:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Log in to the Container registry
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -29,12 +34,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      # هاي الخطوة الجديدة
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-         context: .
-         push: true
-         platforms: linux/amd64,linux/arm64
-         tags: |
-          ghcr.io/daborseham31-png/skills-publish-docker-images/stackoverflow:main
-          ghcr.io/daborseham31-png/skills-publish-docker-images/stackoverflow:${{ github.sha }}
+          images: ghcr.io/daborseham31-png/skills-publish-docker-images/stackoverflow1
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
